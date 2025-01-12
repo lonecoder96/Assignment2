@@ -1,0 +1,60 @@
+---
+- name: Deploy Prometheus and Grafana with Docker Compose
+  hosts: test
+  become: true
+
+  vars:
+    repo_url: "https://github.com/Devops2022jk/Prometheus-Grafana"
+    dest_dir: "/opt/prometheus-grafana"
+    docker_compose_version: "v2.15.1"
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - git
+          - docker.io
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Compose v2
+      shell: |
+        curl -SL https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+
+    - name: Verify Docker Compose installation
+      command: /usr/local/bin/docker-compose --version
+      register: docker_compose_version_check
+
+    - name: Display Docker Compose version
+      debug:
+        msg: "Docker Compose version: {{ docker_compose_version_check.stdout }}"
+
+    - name: Clone the GitHub repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ dest_dir }}"
+        update: yes
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Run docker-compose
+      command: docker-compose -f {{ dest_dir }}/docker-compose.yml up -d
+      args:
+        chdir: "{{ dest_dir }}"
+
+    - name: Verify Prometheus and Grafana containers are running
+      shell: "docker ps --filter 'name={{ item }}' --format '{{'{{.Names}}'}}'"
+      with_items:
+        - prometheus
+        - Grafana
+        - node-exporter
+      register: container_status
+
+    - name: Display running containers
+      debug:
+        var: container_status.results
