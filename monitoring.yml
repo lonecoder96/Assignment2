@@ -4,7 +4,7 @@
   become: true
 
   vars:
-    repo_url: "https://github.com/Devops2022jk/Prometheus-Grafana"
+    repo_url: "https://github.com/lonecoder96/Assignment2.git"
     dest_dir: "/opt/prometheus-grafana"
     docker_compose_version: "v2.15.1"
 
